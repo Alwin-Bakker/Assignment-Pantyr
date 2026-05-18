@@ -1,0 +1,36 @@
+{
+  "name": "assignment-pantyr-frontend",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev": "vite",
+    "storybook": "sb dev -p 6006",
+    "build-storybook": "sb build",
+    "build": "vite build",
+    "preview": "vite preview"
+  },
+  "dependencies": {
+    "@apollo/client": "^3.10.0",
+    "graphql": "^16.6.0",
+    "graphql-ws": "^5.13.0",
+    "lucide-react": "^0.277.0",
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0",
+    "react-router-dom": "^6.14.1"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.60.0",
+    "@storybook/addon-essentials": "^7.6.24",
+    "@storybook/addon-interactions": "^7.6.24",
+    "@storybook/cli": "^7.6.24",
+    "@storybook/react-vite": "^7.6.24",
+    "@types/react": "^18.2.21",
+    "@types/react-dom": "^18.2.7",
+    "autoprefixer": "^10.4.14",
+    "postcss": "^8.4.24",
+    "sonner": "^2.0.0",
+    "tailwindcss": "^3.4.7",
+    "typescript": "^5.2.2",
+    "vite": "^5.0.0"
+  }
+}

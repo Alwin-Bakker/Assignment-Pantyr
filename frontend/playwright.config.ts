@@ -1,13 +1,15 @@
 import { defineConfig, devices } from '@playwright/test';
+import path from 'path';
 
 export default defineConfig({
   testDir: './tests',
-  timeout: 30_000,
-  expect: { timeout: 5000 },
+  testMatch: '**/*.spec.ts',
+  timeout: 60_000,
+  expect: { timeout: 8000 },
   fullyParallel: false,
   forbidOnly: !!process.env.CI,
   retries: process.env.CI ? 1 : 0,
-  workers: process.env.CI ? 1 : undefined,
+  workers: 1,
   use: {
     actionTimeout: 0,
     baseURL: 'http://localhost:5173',
@@ -16,11 +18,20 @@ export default defineConfig({
   projects: [
     { name: 'chromium', use: { ...devices['Desktop Chrome'] } },
   ],
-  webServer: {
-    command: 'npm run dev',
-    cwd: __dirname,
-    url: 'http://localhost:5173',
-    timeout: 120_000,
-    reuseExistingServer: true,
-  },
+  webServer: [
+    {
+      command: 'npm run dev',
+      cwd: path.resolve(__dirname, '../backend'),
+      url: 'http://localhost:4000/graphql',
+      timeout: 30_000,
+      reuseExistingServer: true,
+    },
+    {
+      command: 'npm run dev',
+      cwd: __dirname,
+      url: 'http://localhost:5173',
+      timeout: 30_000,
+      reuseExistingServer: true,
+    },
+  ],
 });

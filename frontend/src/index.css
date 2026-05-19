@@ -3,4 +3,5 @@
 @tailwind utilities;
 
 /* Custom global styles */
-body { @apply bg-white text-slate-900; }
+body { @apply bg-p-bg text-p-black font-sans; }
+

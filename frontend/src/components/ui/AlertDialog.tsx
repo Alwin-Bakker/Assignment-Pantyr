@@ -54,7 +54,7 @@ export default function AlertDialog({ open, onOpenChange, title, description, co
         className="z-50 bg-white rounded-md p-6 max-w-lg w-[90%] shadow-lg"
       >
         <h3 id="alert-dialog-title" className="text-lg font-medium">{title}</h3>
-        {description && <div id="alert-dialog-description" className="mt-2 text-sm text-slate-600">{description}</div>}
+        {description && <div id="alert-dialog-description" className="mt-2 text-sm text-p-grey">{description}</div>}
         <div className="mt-4 flex justify-end gap-2">
           <Button variant="outline" onClick={() => onOpenChange(false)}>{cancelLabel}</Button>
           <Button variant="primary" onClick={handleConfirm}>{confirmLabel}</Button>

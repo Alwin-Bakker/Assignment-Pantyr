@@ -3,6 +3,7 @@ export type Participant = {
   name: string;
   joinedAt: string;
   isHost: boolean;
+  connected: boolean;
 };
 
 export type Estimate = {
@@ -17,13 +18,30 @@ export type Session = {
   code: string;
   name: string;
   createdAt: string;
+  lastActivityAt: string;
   participants: Participant[];
   estimates: Estimate[];
   revealed: boolean;
   storyTitle?: string | null;
+  storyContext?: string | null;
 };
 
 export type JoinSessionResult = {
   session: Session;
   participant: Participant;
+};
+
+export type SessionService = {
+  createSession(name: string): JoinSessionResult;
+  joinSession(code: string, name: string): JoinSessionResult;
+  submitEstimate(sessionId: string, participantId: string, value: string): Session;
+  revealVotes(sessionId: string, participantId: string): Session;
+  resetEstimates(sessionId: string, participantId: string): Session;
+  setStoryTitle(sessionId: string, participantId: string, title: string): Session;
+  setStoryContext(sessionId: string, participantId: string, context: string): Session;
+  closeSession(sessionId: string, participantId: string): boolean;
+  removeParticipant(sessionId: string, participantId: string): void;
+  getSession(sessionId: string): Session;
+  getSessionByCode(code: string): Session;
+  pruneExpired(): void;
 };

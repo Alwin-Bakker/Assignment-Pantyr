@@ -4,6 +4,7 @@ import { ApolloServer, gql } from 'apollo-server-express';
 import { makeExecutableSchema } from '@graphql-tools/schema';
 import { WebSocketServer } from 'ws';
 import { useServer } from 'graphql-ws/lib/use/ws';
+import { PubSub } from 'graphql-subscriptions';
 import { createSessionService } from './domain/sessionService';
 import buildResolvers from './graphql/resolvers';
 
@@ -11,16 +12,19 @@ const typeDefs = gql`
   type Query {
     health: Health!
     getSession(id: ID!): Session
+    getSessionByCode(code: String!): Session
   }
 
   type Mutation {
     createSession(name: String!): JoinSessionResult!
     joinSession(code: String!, name: String!): JoinSessionResult!
     submitEstimate(sessionId: ID!, participantId: ID!, value: String!): Session!
-    revealVotes(sessionId: ID!): Session!
+    revealVotes(sessionId: ID!, participantId: ID!): Session!
     resetEstimates(sessionId: ID!, participantId: ID!): Session!
     setStoryTitle(sessionId: ID!, participantId: ID!, title: String!): Session!
+    setStoryContext(sessionId: ID!, participantId: ID!, context: String!): Session!
     closeSession(sessionId: ID!, participantId: ID!): Boolean!
+    leaveSession(sessionId: ID!, participantId: ID!): Boolean!
   }
 
   type Health {
@@ -34,6 +38,7 @@ const typeDefs = gql`
     name: String!
     joinedAt: String!
     isHost: Boolean!
+    connected: Boolean!
   }
 
   type Estimate {
@@ -51,6 +56,7 @@ const typeDefs = gql`
     estimates: [Estimate!]!
     revealed: Boolean!
     storyTitle: String
+    storyContext: String
   }
 
   type JoinSessionResult {
@@ -65,8 +71,9 @@ const typeDefs = gql`
 `;
 
 async function start() {
-  const service = createSessionService();
-  const resolvers = buildResolvers(service);
+  const pubsub = new PubSub();
+  const service = createSessionService(pubsub);
+  const resolvers = buildResolvers(service, pubsub);
 
   const mergedResolvers = {
     ...resolvers,

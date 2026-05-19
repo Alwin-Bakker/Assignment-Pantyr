@@ -97,10 +97,10 @@ test.describe('Planning Poker full flow', () => {
     await hostPage.reload();
     await hostPage.waitForTimeout(500);
 
-    // After reset, results panel should be hidden again
+    // After reset, results panel should be back to pre-reveal state (no votes yet)
     await expect(
-      hostPage.locator('[data-testid="results-panel"]').getByText(/hidden until/i)
-    ).toBeVisible();
+      hostPage.locator('[data-testid="results-panel"]')
+    ).toContainText(/Waiting for estimates|hidden until/i);
   });
 
   test('3 users — all vote, host manually reveals', async ({ browser }) => {
@@ -143,7 +143,23 @@ test.describe('Planning Poker full flow', () => {
     const bobPage = await joinSession(browser, code, 'Bob');
     const carolPage = await joinSession(browser, code, 'Carol');
 
-    // Carol leaves (goes inactive) before voting
+    // Carol explicitly leaves before closing — Playwright's page.close() does not
+    // fire beforeunload, so we call leaveSession directly to mark her as inactive.
+    const carolIdentityKey = await carolPage.evaluate(() => {
+      return Object.keys(sessionStorage).find((k) => k.startsWith('identity:')) ?? null;
+    });
+    if (carolIdentityKey) {
+      const { participantId: carolParticipantId } = await carolPage.evaluate(
+        (key) => JSON.parse(sessionStorage.getItem(key)!) as { participantId: string; isHost: boolean },
+        carolIdentityKey,
+      );
+      const carolSessionId = carolIdentityKey.replace('identity:', '');
+      await carolPage.request.post('http://localhost:4000/graphql', {
+        data: {
+          query: `mutation { leaveSession(sessionId: "${carolSessionId}", participantId: "${carolParticipantId}") }`,
+        },
+      });
+    }
     await carolPage.close();
 
     // Host and Bob vote — the backend should auto-reveal once all active

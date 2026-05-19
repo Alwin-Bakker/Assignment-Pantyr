@@ -63,7 +63,11 @@ export function createSessionService(pubsub: PubSub, ttlMs = SESSION_TTL_MS): Se
 
   function checkAllVotedAndReveal(session: Session): void {
     const active = session.estimates.filter((e) => isParticipantConnected(session, e.participantId));
-    if (active.length > 0 && active.every((e) => e.hasVoted)) {
+    const inactiveCount = session.estimates.length - active.length;
+    // Only auto-reveal when at least one participant has disconnected and all
+    // remaining active participants have voted. When everyone is present the
+    // host must press "Reveal" manually.
+    if (inactiveCount > 0 && active.length > 0 && active.every((e) => e.hasVoted)) {
       session.revealed = true;
       session.estimates.forEach((e) => { e.value = e.storedValue ?? null; });
     }
@@ -229,20 +233,44 @@ export function createSessionService(pubsub: PubSub, ttlMs = SESSION_TTL_MS): Se
     return true;
   }
 
+  function reconnectParticipant(sessionId: string, participantId: string): Session {
+    const session = sessionsById.get(sessionId);
+    if (!session) throw new Error(`Session with id ${sessionId} not found`);
+    const participant = session.participants.find((p) => p.id === participantId);
+    if (!participant) throw new Error(`Participant with id ${participantId} not found in session ${sessionId}`);
+    participant.connected = true;
+    touch(session);
+    sessionsById.set(session.id, session);
+    persist();
+    pubsub.publish(`SESSION_${session.id}_UPDATED`, { sessionUpdated: toSessionView(session) });
+    return toSessionView(session);
+  }
+
   function removeParticipant(sessionId: string, participantId: string): void {
     const session = sessionsById.get(sessionId);
     if (!session) return; // session may have already been closed
     const participant = session.participants.find((p) => p.id === participantId);
     if (!participant) return;
     participant.connected = false;
-    // A disconnection may unblock auto-reveal if all remaining active participants have voted
-    if (!session.revealed) {
-      checkAllVotedAndReveal(session);
-    }
     touch(session);
     sessionsById.set(session.id, session);
     persist();
     pubsub.publish(`SESSION_${session.id}_UPDATED`, { sessionUpdated: toSessionView(session) });
+    // Delay auto-reveal check to give reloading browsers time to reconnect.
+    // If the participant was just refreshing their page they will call
+    // reconnectParticipant within this window, keeping the session intact.
+    if (!session.revealed) {
+      setTimeout(() => {
+        const current = sessionsById.get(sessionId);
+        if (!current || current.revealed) return;
+        checkAllVotedAndReveal(current);
+        if (current.revealed) {
+          touch(current);
+          persist();
+          pubsub.publish(`SESSION_${current.id}_UPDATED`, { sessionUpdated: toSessionView(current) });
+        }
+      }, 2000);
+    }
   }
 
   return {
@@ -257,6 +285,7 @@ export function createSessionService(pubsub: PubSub, ttlMs = SESSION_TTL_MS): Se
     setStoryContext,
     closeSession,
     removeParticipant,
+    reconnectParticipant,
     pruneExpired,
   };
 }

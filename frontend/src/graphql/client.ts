@@ -21,7 +21,7 @@ const splitLink = split(
 
 export const client = new ApolloClient({
   link: splitLink,
-  // Estimate has no id field; tell Apollo to normalise it by participantId
+  // Estimate has no id field; tell Apollo to normalize it by participantId
   // so cache updates from mutations are reflected in queries without a manual refetch.
   cache: new InMemoryCache({
     typePolicies: {

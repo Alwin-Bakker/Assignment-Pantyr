@@ -41,6 +41,7 @@ export type SessionService = {
   setStoryContext(sessionId: string, participantId: string, context: string): Session;
   closeSession(sessionId: string, participantId: string): boolean;
   removeParticipant(sessionId: string, participantId: string): void;
+  reconnectParticipant(sessionId: string, participantId: string): Session;
   getSession(sessionId: string): Session;
   getSessionByCode(code: string): Session;
   pruneExpired(): void;

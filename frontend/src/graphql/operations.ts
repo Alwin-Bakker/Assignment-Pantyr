@@ -54,6 +54,14 @@ export const LEAVE_SESSION = gql`
   }
 `;
 
+export const RECONNECT_PARTICIPANT = gql`
+  mutation ReconnectParticipant($sessionId: ID!, $participantId: ID!) {
+    reconnectParticipant(sessionId: $sessionId, participantId: $participantId) {
+      id
+    }
+  }
+`;
+
 export const GET_SESSION = gql`
   query GetSession($id: ID!) {
     getSession(id: $id) {

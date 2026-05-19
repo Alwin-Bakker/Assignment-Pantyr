@@ -1,6 +1,6 @@
 ﻿import React, { useEffect, useState } from 'react';
 import { useMutation } from '@apollo/client';
-import { SUBMIT_ESTIMATE } from '../graphql/operations';
+import { SUBMIT_ESTIMATE, RECONNECT_PARTICIPANT } from '../graphql/operations';
 import { useSessionIdentity } from '../hooks/useSessionIdentity';
 import { useSessionData } from '../hooks/useSessionData';
 import ParticipantList from '../components/session/ParticipantList';
@@ -18,6 +18,18 @@ export default function SessionPage() {
 
   const { session, refetch } = useSessionData(sessionId);
   const [submitEstimate] = useMutation(SUBMIT_ESTIMATE);
+  const [reconnectParticipantMutation] = useMutation(RECONNECT_PARTICIPANT);
+
+  // Re-mark this participant as connected whenever the page (re)loads.
+  // The beforeunload handler sends a leaveSession keepalive fetch on every
+  // unload (including reloads), so we cancel that out here on mount.
+  useEffect(() => {
+    if (!sessionId || !participantId) return;
+    reconnectParticipantMutation({ variables: { sessionId, participantId } }).catch(() => {
+      // Session may have been closed while offline — ignore.
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   // Local state gives instant card-highlight feedback before the server round-trip.
   // Cleared when the backend confirms the round was reset (hasVoted → false).

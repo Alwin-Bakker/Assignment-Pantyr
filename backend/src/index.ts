@@ -25,6 +25,7 @@ const typeDefs = gql`
     setStoryContext(sessionId: ID!, participantId: ID!, context: String!): Session!
     closeSession(sessionId: ID!, participantId: ID!): Boolean!
     leaveSession(sessionId: ID!, participantId: ID!): Boolean!
+    reconnectParticipant(sessionId: ID!, participantId: ID!): Session!
   }
 
   type Health {

@@ -40,6 +40,10 @@ export function buildResolvers(sessionService: SessionService, pubsub: PubSub) {
         _: unknown,
         { sessionId, participantId }: { sessionId: string; participantId: string },
       ) => { sessionService.removeParticipant(sessionId, participantId); return true; },
+      reconnectParticipant: (
+        _: unknown,
+        { sessionId, participantId }: { sessionId: string; participantId: string },
+      ) => sessionService.reconnectParticipant(sessionId, participantId),
     },
     Subscription: {
       sessionUpdated: {

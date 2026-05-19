@@ -16,7 +16,16 @@ export default defineConfig({
     trace: 'on-first-retry',
   },
   projects: [
-    { name: 'chromium', use: { ...devices['Desktop Chrome'] } },
+    {
+      name: 'chromium',
+      use: {
+        ...devices['Desktop Chrome'],
+        launchOptions: {
+          args: ['--disable-features=Translate', '--lang=en-US'],
+        },
+        locale: 'en-US',
+      },
+    },
   ],
   webServer: [
     {

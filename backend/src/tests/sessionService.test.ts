@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach } from 'vitest';
+import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { PubSub } from 'graphql-subscriptions';
 import { createSessionService } from '../domain/sessionService';
 
@@ -9,6 +9,10 @@ describe('sessionService', () => {
   beforeEach(() => {
     pubsub = new PubSub();
     service = createSessionService(pubsub);
+  });
+
+  afterEach(() => {
+    vi.useRealTimers();
   });
 
   // ── createSession ────────────────────────────────────────────────────────
@@ -47,14 +51,20 @@ describe('sessionService', () => {
     const afterFirst = service.submitEstimate(created.session.id, created.participant.id, '8');
     const userEstimate = afterFirst.estimates.find((e) => e.participantId === created.participant.id);
 
+    // Values are hidden while voting is in progress
     expect(userEstimate?.hasVoted).toBe(true);
     expect(userEstimate?.value).toBeNull();
 
+    // When all active participants have voted and nobody is disconnected the
+    // host must reveal manually — no automatic reveal fires.
     const afterSecond = service.submitEstimate(created.session.id, joined.participant.id, '5');
-    const revealed = afterSecond.estimates.find((e) => e.participantId === created.participant.id);
+    expect(afterSecond.revealed).toBe(false);
+    expect(afterSecond.estimates.find((e) => e.participantId === created.participant.id)?.value).toBeNull();
 
-    expect(afterSecond.revealed).toBe(true);
-    expect(revealed?.value).toBe('8');
+    // Host manually reveals — now values become visible.
+    const afterReveal = service.revealVotes(created.session.id, created.participant.id);
+    expect(afterReveal.revealed).toBe(true);
+    expect(afterReveal.estimates.find((e) => e.participantId === created.participant.id)?.value).toBe('8');
   });
 
   it('rejects an invalid card value', () => {
@@ -153,12 +163,16 @@ describe('sessionService', () => {
   });
 
   it('disconnecting the only unvoted participant triggers auto-reveal', () => {
+    vi.useFakeTimers();
     const created = service.createSession('Host');
     const joined = service.joinSession(created.session.code, 'Bob');
 
     // Host has voted, Bob disconnects without voting
     service.submitEstimate(created.session.id, created.participant.id, '3');
     service.removeParticipant(created.session.id, joined.participant.id);
+
+    // Auto-reveal fires after the reconnect grace period elapses
+    vi.advanceTimersByTime(2001);
 
     const session = service.getSession(created.session.id);
     expect(session.revealed).toBe(true);

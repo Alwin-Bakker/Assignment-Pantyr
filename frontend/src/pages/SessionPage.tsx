@@ -96,7 +96,7 @@ export default function SessionPage() {
   return (
     <main className="min-h-screen p-8 font-sans">
       <div className="max-w-7xl mx-auto space-y-6">
-        {/* Top row: story content and pokering (left) / participants + invite (right) */}
+        {/* Top row: story content and card grid (left) / participants + invite (right) */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           {/* ── Left: story-related content ─────────────────────────── */}
           <div className="md:col-span-2 flex flex-col">
@@ -166,7 +166,9 @@ export default function SessionPage() {
           {/* ── Right: participants + invite + estimated stories ─────── */}
           <aside className="flex flex-col gap-6">
             <div
-              className={`bg-white p-6 rounded-md border border-p-green shadow-sm${session.completedStories.length === 0 ? ' flex-1' : ''}`}
+              className={`bg-white p-6 rounded-md border border-p-green shadow-sm${
+                session.completedStories.length === 0 ? ' flex-1' : ''
+              }`}
             >
               <h3 className="text-lg font-semibold text-p-dark mb-4">Participants</h3>
               <ParticipantList
@@ -175,7 +177,7 @@ export default function SessionPage() {
                 participantId={participantId}
               />
               <div className="mt-6">
-                <InvitePanel code={session.code} sessionId={sessionId} />
+                <InvitePanel code={session.code} />
               </div>
             </div>
 

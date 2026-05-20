@@ -20,8 +20,8 @@ export default function Button({
   else if (variant === 'danger') styles = `${base} bg-p-tomato text-white hover:bg-red-600`;
   else if (variant === 'outline')
     styles = `${base} bg-transparent border border-p-navy text-p-navy hover:bg-p-navy-tl`;
-  else
-    /* ghost */ styles = `${base} bg-transparent border border-slate-200 text-slate-600 hover:bg-slate-50`;
+  /* ghost */ else
+    styles = `${base} bg-transparent border border-slate-200 text-slate-600 hover:bg-slate-50`;
 
   const disabledStyles = disabled ? ' opacity-50 cursor-not-allowed pointer-events-none' : '';
   const mergedClassName = [styles + disabledStyles, className].filter(Boolean).join(' ');

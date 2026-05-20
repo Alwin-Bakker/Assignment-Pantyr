@@ -76,7 +76,8 @@ export default function HomePage() {
               <h1 className="text-3xl md:text-5xl font-bold text-p-blue">Pantyr Poker</h1>
             </div>
             <p className="text-lg text-p-grey">
-              Estimate stories with your team online. Built for the Pantyr full-stack assignment. NB — this is a demo project, not an official Pantyr product.
+              Estimate stories with your team online. Built for the Pantyr full-stack assignment. NB
+              — this is a demo project, not an official Pantyr product.
             </p>
 
             <div className="grid gap-4 sm:grid-cols-2 mt-6 pb-6 border-b">

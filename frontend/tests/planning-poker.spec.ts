@@ -81,12 +81,6 @@ test.describe('Planning Poker full flow', () => {
     await hostPage.waitForTimeout(500);
     await hostPage.getByRole('button', { name: /reveal estimates/i }).click();
 
-    // If a confirm dialog appears (not everyone revealed), click confirm
-    const revealConfirm = hostPage.getByRole('button', { name: /^reveal$/i });
-    if (await revealConfirm.isVisible().catch(() => false)) {
-      await revealConfirm.click();
-    }
-
     // ── 7. Results appear for host ────────────────────────────────────
     const hostResultsPanel = hostPage.locator('[data-testid="results-panel"]');
     await expect(hostResultsPanel).not.toContainText(/hidden until/i);

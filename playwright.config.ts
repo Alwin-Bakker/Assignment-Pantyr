@@ -13,9 +13,7 @@ const config = {
     baseURL: 'http://localhost:5173',
     trace: 'on-first-retry',
   },
-  projects: [
-    { name: 'chromium', use: { browserName: 'chromium' } },
-  ],
+  projects: [{ name: 'chromium', use: { browserName: 'chromium' } }],
   webServer: {
     // start the frontend dev server from the repo root
     command: 'npm --prefix frontend run dev',

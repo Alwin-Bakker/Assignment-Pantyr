@@ -3,5 +3,6 @@
 @tailwind utilities;
 
 /* Custom global styles */
-body { @apply bg-p-bg text-p-black font-sans; }
-
+body {
+  @apply bg-p-bg text-p-black font-sans;
+}

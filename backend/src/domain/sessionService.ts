@@ -3,7 +3,20 @@ import { PubSub } from 'graphql-subscriptions';
 import { readDb, writeDb } from '../db';
 
 export const VALID_CARD_VALUES = new Set([
-  '0', '1/2', '1', '2', '3', '5', '8', '13', '20', '40', '100', '?', '∞', '☕',
+  '0',
+  '1/2',
+  '1',
+  '2',
+  '3',
+  '5',
+  '8',
+  '13',
+  '20',
+  '40',
+  '100',
+  '?',
+  '∞',
+  '☕',
 ]);
 
 function makeCode(existing: Map<string, Session>): string {
@@ -28,9 +41,10 @@ export function createSessionService(pubsub: PubSub, ttlMs = SESSION_TTL_MS): Se
   const sessionsById = new Map<string, Session>();
   const sessionsByCode = new Map<string, Session>();
 
-
   const stored = readDb();
   Object.values(stored.sessions).forEach((session) => {
+    // Migrate sessions that predate the completedStories field
+    session.completedStories ??= [];
     sessionsById.set(session.id, session);
     sessionsByCode.set(session.code, session);
   });
@@ -52,25 +66,9 @@ export function createSessionService(pubsub: PubSub, ttlMs = SESSION_TTL_MS): Se
     const estimates = s.estimates.map((e) => ({
       participantId: e.participantId,
       hasVoted: e.hasVoted,
-      value: s.revealed ? e.storedValue ?? null : null,
+      value: s.revealed ? (e.storedValue ?? null) : null,
     }));
     return { ...s, estimates } as Session;
-  }
-
-  function isParticipantConnected(session: Session, participantId: string): boolean {
-    return session.participants.find((p) => p.id === participantId)?.connected ?? true;
-  }
-
-  function checkAllVotedAndReveal(session: Session): void {
-    const active = session.estimates.filter((e) => isParticipantConnected(session, e.participantId));
-    const inactiveCount = session.estimates.length - active.length;
-    // Only auto-reveal when at least one participant has disconnected and all
-    // remaining active participants have voted. When everyone is present the
-    // host must press "Reveal" manually.
-    if (inactiveCount > 0 && active.length > 0 && active.every((e) => e.hasVoted)) {
-      session.revealed = true;
-      session.estimates.forEach((e) => { e.value = e.storedValue ?? null; });
-    }
   }
 
   function pruneExpired(): void {
@@ -93,11 +91,28 @@ export function createSessionService(pubsub: PubSub, ttlMs = SESSION_TTL_MS): Se
     const code = makeCode(sessionsByCode);
     const participantId = makeId('u');
     const now = new Date().toISOString();
-    const participant: Participant = { id: participantId, name, joinedAt: now, isHost: true, connected: true };
-    const estimates: Estimate[] = [{ participantId, value: null, hasVoted: false, storedValue: null }];
+    const participant: Participant = {
+      id: participantId,
+      name,
+      joinedAt: now,
+      isHost: true,
+      connected: true,
+    };
+    const estimates: Estimate[] = [
+      { participantId, value: null, hasVoted: false, storedValue: null },
+    ];
     const session: Session = {
-      id: sessionId, code, name: `${name}'s session`, createdAt: now, lastActivityAt: now,
-      participants: [participant], estimates, revealed: false, storyTitle: null,
+      id: sessionId,
+      code,
+      name: `${name}'s session`,
+      createdAt: now,
+      lastActivityAt: now,
+      participants: [participant],
+      estimates,
+      revealed: false,
+      storyTitle: null,
+      storyContext: null,
+      completedStories: [],
     };
     sessionsById.set(sessionId, session);
     sessionsByCode.set(code, session);
@@ -111,7 +126,13 @@ export function createSessionService(pubsub: PubSub, ttlMs = SESSION_TTL_MS): Se
     if (!session) throw new Error(`Session with code ${code} not found`);
     const participantId = makeId('u');
     const now = new Date().toISOString();
-    const participant: Participant = { id: participantId, name, joinedAt: now, isHost: false, connected: true };
+    const participant: Participant = {
+      id: participantId,
+      name,
+      joinedAt: now,
+      isHost: false,
+      connected: true,
+    };
     session.participants.push(participant);
     session.estimates.push({ participantId, value: null, hasVoted: false, storedValue: null });
     touch(session);
@@ -131,12 +152,14 @@ export function createSessionService(pubsub: PubSub, ttlMs = SESSION_TTL_MS): Se
     if (!session) throw new Error(`Session with id ${sessionId} not found`);
     if (session.revealed) throw new Error('Cannot vote after votes have been revealed');
     const estimate = session.estimates.find((e) => e.participantId === participantId);
-    if (!estimate) throw new Error(`Participant with id ${participantId} not found in session ${sessionId}`);
+    if (!estimate)
+      throw new Error(`Participant with id ${participantId} not found in session ${sessionId}`);
     estimate.storedValue = value;
     estimate.hasVoted = true;
-    session.estimates.forEach((e) => { e.value = null; });
+    session.estimates.forEach((e) => {
+      e.value = null;
+    });
 
-    checkAllVotedAndReveal(session);
     touch(session);
     sessionsById.set(session.id, session);
     persist();
@@ -150,7 +173,8 @@ export function createSessionService(pubsub: PubSub, ttlMs = SESSION_TTL_MS): Se
     const session = sessionsById.get(sessionId);
     if (!session) throw new Error(`Session with id ${sessionId} not found`);
     const asker = session.participants.find((p) => p.id === participantId);
-    if (!asker) throw new Error(`Participant with id ${participantId} not found in session ${sessionId}`);
+    if (!asker)
+      throw new Error(`Participant with id ${participantId} not found in session ${sessionId}`);
     if (!asker.isHost) throw new Error('Only the host can set the story title');
     session.storyTitle = trimmed;
     touch(session);
@@ -164,10 +188,13 @@ export function createSessionService(pubsub: PubSub, ttlMs = SESSION_TTL_MS): Se
     const session = sessionsById.get(sessionId);
     if (!session) throw new Error(`Session with id ${sessionId} not found`);
     const asker = session.participants.find((p) => p.id === participantId);
-    if (!asker) throw new Error(`Participant with id ${participantId} not found in session ${sessionId}`);
+    if (!asker)
+      throw new Error(`Participant with id ${participantId} not found in session ${sessionId}`);
     if (!asker.isHost) throw new Error('Only the host can reveal votes');
     session.revealed = true;
-    session.estimates.forEach((e) => { e.value = e.storedValue ?? null; });
+    session.estimates.forEach((e) => {
+      e.value = e.storedValue ?? null;
+    });
     touch(session);
     sessionsById.set(session.id, session);
     persist();
@@ -191,7 +218,8 @@ export function createSessionService(pubsub: PubSub, ttlMs = SESSION_TTL_MS): Se
     const session = sessionsById.get(sessionId);
     if (!session) throw new Error(`Session with id ${sessionId} not found`);
     const asker = session.participants.find((p) => p.id === participantId);
-    if (!asker) throw new Error(`Participant with id ${participantId} not found in session ${sessionId}`);
+    if (!asker)
+      throw new Error(`Participant with id ${participantId} not found in session ${sessionId}`);
     if (!asker.isHost) throw new Error('Only the host can set the story context');
     session.storyContext = context.trim();
     touch(session);
@@ -205,7 +233,8 @@ export function createSessionService(pubsub: PubSub, ttlMs = SESSION_TTL_MS): Se
     const session = sessionsById.get(sessionId);
     if (!session) throw new Error(`Session with id ${sessionId} not found`);
     const asker = session.participants.find((p) => p.id === participantId);
-    if (!asker) throw new Error(`Participant with id ${participantId} not found in session ${sessionId}`);
+    if (!asker)
+      throw new Error(`Participant with id ${participantId} not found in session ${sessionId}`);
     if (!asker.isHost) throw new Error('Only the host can reset estimates');
     session.estimates.forEach((e) => {
       e.storedValue = null;
@@ -224,7 +253,8 @@ export function createSessionService(pubsub: PubSub, ttlMs = SESSION_TTL_MS): Se
     const session = sessionsById.get(sessionId);
     if (!session) throw new Error(`Session with id ${sessionId} not found`);
     const asker = session.participants.find((p) => p.id === participantId);
-    if (!asker) throw new Error(`Participant with id ${participantId} not found in session ${sessionId}`);
+    if (!asker)
+      throw new Error(`Participant with id ${participantId} not found in session ${sessionId}`);
     if (!asker.isHost) throw new Error('Only the host can close the session');
     sessionsById.delete(sessionId);
     sessionsByCode.delete(session.code);
@@ -237,7 +267,8 @@ export function createSessionService(pubsub: PubSub, ttlMs = SESSION_TTL_MS): Se
     const session = sessionsById.get(sessionId);
     if (!session) throw new Error(`Session with id ${sessionId} not found`);
     const participant = session.participants.find((p) => p.id === participantId);
-    if (!participant) throw new Error(`Participant with id ${participantId} not found in session ${sessionId}`);
+    if (!participant)
+      throw new Error(`Participant with id ${participantId} not found in session ${sessionId}`);
     participant.connected = true;
     touch(session);
     sessionsById.set(session.id, session);
@@ -256,21 +287,41 @@ export function createSessionService(pubsub: PubSub, ttlMs = SESSION_TTL_MS): Se
     sessionsById.set(session.id, session);
     persist();
     pubsub.publish(`SESSION_${session.id}_UPDATED`, { sessionUpdated: toSessionView(session) });
-    // Delay auto-reveal check to give reloading browsers time to reconnect.
-    // If the participant was just refreshing their page they will call
-    // reconnectParticipant within this window, keeping the session intact.
-    if (!session.revealed) {
-      setTimeout(() => {
-        const current = sessionsById.get(sessionId);
-        if (!current || current.revealed) return;
-        checkAllVotedAndReveal(current);
-        if (current.revealed) {
-          touch(current);
-          persist();
-          pubsub.publish(`SESSION_${current.id}_UPDATED`, { sessionUpdated: toSessionView(current) });
-        }
-      }, 2000);
+  }
+
+  function pickStoryPoints(sessionId: string, participantId: string, points: string): Session {
+    if (!VALID_CARD_VALUES.has(points)) {
+      throw new Error(`Invalid story points value "${points}".`);
     }
+    const session = sessionsById.get(sessionId);
+    if (!session) throw new Error(`Session with id ${sessionId} not found`);
+    const asker = session.participants.find((p) => p.id === participantId);
+    if (!asker)
+      throw new Error(`Participant with id ${participantId} not found in session ${sessionId}`);
+    if (!asker.isHost) throw new Error('Only the host can pick story points');
+    if (!session.revealed) throw new Error('Votes must be revealed before picking story points');
+
+    // Save the current story if it has a title
+    if (session.storyTitle) {
+      session.completedStories = session.completedStories ?? [];
+      session.completedStories.push({ title: session.storyTitle, points });
+    }
+
+    // Reset estimates and clear the current story
+    session.estimates.forEach((e) => {
+      e.storedValue = null;
+      e.value = null;
+      e.hasVoted = false;
+    });
+    session.revealed = false;
+    session.storyTitle = null;
+    session.storyContext = null;
+
+    touch(session);
+    sessionsById.set(session.id, session);
+    persist();
+    pubsub.publish(`SESSION_${session.id}_UPDATED`, { sessionUpdated: toSessionView(session) });
+    return toSessionView(session);
   }
 
   return {
@@ -286,7 +337,7 @@ export function createSessionService(pubsub: PubSub, ttlMs = SESSION_TTL_MS): Se
     closeSession,
     removeParticipant,
     reconnectParticipant,
+    pickStoryPoints,
     pruneExpired,
   };
 }
-

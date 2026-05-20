@@ -15,5 +15,5 @@ root.render(
       <App />
       <Toaster position="top-center" />
     </ApolloProvider>
-  </React.StrictMode>
+  </React.StrictMode>,
 );

@@ -25,6 +25,6 @@ export const TextArea: Story = {
     label: 'Story context',
     multiline: true,
     rows: 4,
-    value: 'Some long context...'
+    value: 'Some long context...',
   },
 };

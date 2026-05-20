@@ -18,9 +18,16 @@ export default function ParticipantList({ participants, estimates, participantId
         const isMe = participantId === p.id;
         const inactive = p.connected === false;
         return (
-          <li key={p.id} className={['flex items-center justify-between', inactive ? 'opacity-50' : ''].join(' ')}>
+          <li
+            key={p.id}
+            className={['flex items-center justify-between', inactive ? 'opacity-50' : ''].join(
+              ' ',
+            )}
+          >
             <div className="flex items-center gap-3">
-              <span className={['font-medium', inactive ? 'text-p-grey line-through' : ''].join(' ')}>
+              <span
+                className={['font-medium', inactive ? 'text-p-grey line-through' : ''].join(' ')}
+              >
                 {p.name}
               </span>
               {isMe && (

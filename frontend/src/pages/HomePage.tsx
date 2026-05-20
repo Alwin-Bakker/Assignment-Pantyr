@@ -35,7 +35,10 @@ export default function HomePage() {
       if (sess?.id) {
         const id = sess.id as string;
         const pId = participant.id as string;
-        sessionStorage.setItem(`identity:${id}`, JSON.stringify({ participantId: pId, isHost: true }));
+        sessionStorage.setItem(
+          `identity:${id}`,
+          JSON.stringify({ participantId: pId, isHost: true }),
+        );
         navigate(`/session/${id}`, { state: { sessionId: id, participantId: pId, isHost: true } });
       }
     } catch (e) {
@@ -72,7 +75,9 @@ export default function HomePage() {
               <img src={logo} width={56} height={56} alt="Pantyr logo" className="block" />
               <h1 className="text-3xl md:text-5xl font-bold text-p-blue">Pantyr Poker</h1>
             </div>
-            <p className="text-lg text-p-grey">Estimate stories with your team online. Built for the Pantyr full-stack assignment</p>
+            <p className="text-lg text-p-grey">
+              Estimate stories with your team online. Built for the Pantyr full-stack assignment. NB — this is a demo project, not an official Pantyr product.
+            </p>
 
             <div className="grid gap-4 sm:grid-cols-2 mt-6 pb-6 border-b">
               <Feature
@@ -88,11 +93,17 @@ export default function HomePage() {
             <div className="mt-6">
               <div className="flex justify-center md:justify-start items-stretch gap-2">
                 <Step Icon={PlusSquare} title="Create" description="Start a session" />
-                <div className="self-center px-1"><ArrowRight size={20} className="text-p-blue" /></div>
+                <div className="self-center px-1">
+                  <ArrowRight size={20} className="text-p-blue" />
+                </div>
                 <Step Icon={Link2} title="Invite" description="Share your session link" />
-                <div className="self-center px-1"><ArrowRight size={20} className="text-p-blue" /></div>
+                <div className="self-center px-1">
+                  <ArrowRight size={20} className="text-p-blue" />
+                </div>
                 <Step Icon={UserCheck} title="Vote" description="Submit estimates" />
-                <div className="self-center px-1"><ArrowRight size={20} className="text-sky-600" /></div>
+                <div className="self-center px-1">
+                  <ArrowRight size={20} className="text-sky-600" />
+                </div>
                 <Step Icon={Eye} title="Reveal" description="Show results" />
               </div>
             </div>
@@ -109,9 +120,21 @@ export default function HomePage() {
               </div>
 
               <form onSubmit={handleSubmit} className="mt-6 space-y-4">
-                <Input id="create-name" label="Your name" placeholder="e.g. Alex" value={createName} onChange={(e: React.ChangeEvent<HTMLInputElement>) => setCreateName(e.target.value)} required aria-required="true" />
+                <Input
+                  id="create-name"
+                  label="Your name"
+                  placeholder="e.g. Alex"
+                  value={createName}
+                  onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+                    setCreateName(e.target.value)
+                  }
+                  required
+                  aria-required="true"
+                />
                 <div className="flex items-center">
-                  <Button type="submit" disabled={loading}>{loading ? 'Creating...' : 'Start session'}</Button>
+                  <Button type="submit" disabled={loading}>
+                    {loading ? 'Creating...' : 'Start session'}
+                  </Button>
                 </div>
                 {error && <p className="text-red-600">Error creating session</p>}
               </form>
@@ -124,10 +147,28 @@ export default function HomePage() {
               </div>
 
               <form onSubmit={handleJoin} className="mt-6 space-y-4">
-                <Input id="join-name" label="Your name" placeholder="e.g. Alex" value={joinName} onChange={(e: React.ChangeEvent<HTMLInputElement>) => setJoinName(e.target.value)} required aria-required="true" />
-                <Input id="join-code" label="Session code" placeholder="ABC123" value={code} onChange={(e: React.ChangeEvent<HTMLInputElement>) => setCode(e.target.value)} required aria-required="true" />
+                <Input
+                  id="join-name"
+                  label="Your name"
+                  placeholder="e.g. Alex"
+                  value={joinName}
+                  onChange={(e: React.ChangeEvent<HTMLInputElement>) => setJoinName(e.target.value)}
+                  required
+                  aria-required="true"
+                />
+                <Input
+                  id="join-code"
+                  label="Session code"
+                  placeholder="ABC123"
+                  value={code}
+                  onChange={(e: React.ChangeEvent<HTMLInputElement>) => setCode(e.target.value)}
+                  required
+                  aria-required="true"
+                />
                 <div className="flex items-center">
-                  <Button type="submit" disabled={joinLoading}>{joinLoading ? 'Joining...' : 'Join session'}</Button>
+                  <Button type="submit" disabled={joinLoading}>
+                    {joinLoading ? 'Joining...' : 'Join session'}
+                  </Button>
                 </div>
                 {joinError && <p className="text-red-600">Error joining session</p>}
               </form>

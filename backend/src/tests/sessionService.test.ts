@@ -49,7 +49,9 @@ describe('sessionService', () => {
     const joined = service.joinSession(created.session.code, 'Bob');
 
     const afterFirst = service.submitEstimate(created.session.id, created.participant.id, '8');
-    const userEstimate = afterFirst.estimates.find((e) => e.participantId === created.participant.id);
+    const userEstimate = afterFirst.estimates.find(
+      (e) => e.participantId === created.participant.id,
+    );
 
     // Values are hidden while voting is in progress
     expect(userEstimate?.hasVoted).toBe(true);
@@ -59,12 +61,16 @@ describe('sessionService', () => {
     // host must reveal manually — no automatic reveal fires.
     const afterSecond = service.submitEstimate(created.session.id, joined.participant.id, '5');
     expect(afterSecond.revealed).toBe(false);
-    expect(afterSecond.estimates.find((e) => e.participantId === created.participant.id)?.value).toBeNull();
+    expect(
+      afterSecond.estimates.find((e) => e.participantId === created.participant.id)?.value,
+    ).toBeNull();
 
     // Host manually reveals — now values become visible.
     const afterReveal = service.revealVotes(created.session.id, created.participant.id);
     expect(afterReveal.revealed).toBe(true);
-    expect(afterReveal.estimates.find((e) => e.participantId === created.participant.id)?.value).toBe('8');
+    expect(
+      afterReveal.estimates.find((e) => e.participantId === created.participant.id)?.value,
+    ).toBe('8');
   });
 
   it('rejects an invalid card value', () => {
@@ -77,9 +83,9 @@ describe('sessionService', () => {
   it('cannot vote after votes have been revealed', () => {
     const created = service.createSession('User');
     service.revealVotes(created.session.id, created.participant.id);
-    expect(() =>
-      service.submitEstimate(created.session.id, created.participant.id, '3'),
-    ).toThrow('Cannot vote after votes have been revealed');
+    expect(() => service.submitEstimate(created.session.id, created.participant.id, '3')).toThrow(
+      'Cannot vote after votes have been revealed',
+    );
   });
 
   // ── revealVotes ──────────────────────────────────────────────────────────
@@ -88,9 +94,9 @@ describe('sessionService', () => {
     const created = service.createSession('User');
     const joined = service.joinSession(created.session.code, 'Bob');
 
-    expect(() =>
-      service.revealVotes(created.session.id, joined.participant.id),
-    ).toThrow('Only the host can reveal votes');
+    expect(() => service.revealVotes(created.session.id, joined.participant.id)).toThrow(
+      'Only the host can reveal votes',
+    );
   });
 
   // ── resetEstimates ───────────────────────────────────────────────────────
@@ -113,9 +119,9 @@ describe('sessionService', () => {
     const created = service.createSession('User');
     const joined = service.joinSession(created.session.code, 'Bob');
 
-    expect(() =>
-      service.resetEstimates(created.session.id, joined.participant.id),
-    ).toThrow('Only the host can reset estimates');
+    expect(() => service.resetEstimates(created.session.id, joined.participant.id)).toThrow(
+      'Only the host can reset estimates',
+    );
   });
 
   // ── setStoryTitle ────────────────────────────────────────────────────────
@@ -124,16 +130,16 @@ describe('sessionService', () => {
     const created = service.createSession('User');
     const joined = service.joinSession(created.session.code, 'Bob');
 
-    expect(() =>
-      service.setStoryTitle(created.session.id, joined.participant.id, 'Story'),
-    ).toThrow('Only the host can set the story title');
+    expect(() => service.setStoryTitle(created.session.id, joined.participant.id, 'Story')).toThrow(
+      'Only the host can set the story title',
+    );
   });
 
   it('rejects an empty or whitespace story title', () => {
     const created = service.createSession('User');
-    expect(() =>
-      service.setStoryTitle(created.session.id, created.participant.id, '   '),
-    ).toThrow('Story title cannot be empty');
+    expect(() => service.setStoryTitle(created.session.id, created.participant.id, '   ')).toThrow(
+      'Story title cannot be empty',
+    );
   });
 
   // ── closeSession ─────────────────────────────────────────────────────────
@@ -142,40 +148,45 @@ describe('sessionService', () => {
     const created = service.createSession('User');
     const joined = service.joinSession(created.session.code, 'Bob');
 
-    expect(() =>
-      service.closeSession(created.session.id, joined.participant.id),
-    ).toThrow('Only the host can close the session');
+    expect(() => service.closeSession(created.session.id, joined.participant.id)).toThrow(
+      'Only the host can close the session',
+    );
   });
 
   // ── removeParticipant ────────────────────────────────────────────────────
 
-  it('a disconnected participant does not block auto-reveal', () => {
+  it('marks a disconnected participant as not connected', () => {
     const created = service.createSession('Host');
     const joined = service.joinSession(created.session.code, 'Bob');
 
-    // Bob votes, then disconnects before Host votes
-    service.submitEstimate(created.session.id, joined.participant.id, '5');
     service.removeParticipant(created.session.id, joined.participant.id);
-
-    // Host votes — only active participants need to have voted, so it should auto-reveal
-    const after = service.submitEstimate(created.session.id, created.participant.id, '8');
-    expect(after.revealed).toBe(true);
-  });
-
-  it('disconnecting the only unvoted participant triggers auto-reveal', () => {
-    vi.useFakeTimers();
-    const created = service.createSession('Host');
-    const joined = service.joinSession(created.session.code, 'Bob');
-
-    // Host has voted, Bob disconnects without voting
-    service.submitEstimate(created.session.id, created.participant.id, '3');
-    service.removeParticipant(created.session.id, joined.participant.id);
-
-    // Auto-reveal fires after the reconnect grace period elapses
-    vi.advanceTimersByTime(2001);
 
     const session = service.getSession(created.session.id);
-    expect(session.revealed).toBe(true);
+    const bob = session.participants.find((p) => p.id === joined.participant.id);
+    expect(bob?.connected).toBe(false);
+  });
+
+  it('does NOT auto-reveal when a participant disconnects', () => {
+    const created = service.createSession('Host');
+    const joined = service.joinSession(created.session.code, 'Bob');
+
+    // Host votes, then Bob disconnects without voting
+    service.submitEstimate(created.session.id, created.participant.id, '5');
+    service.removeParticipant(created.session.id, joined.participant.id);
+
+    // Session should NOT be auto-revealed — host must reveal manually
+    const session = service.getSession(created.session.id);
+    expect(session.revealed).toBe(false);
+  });
+
+  it('does NOT auto-reveal even when all remaining active participants have voted', () => {
+    const created = service.createSession('Host');
+    const joined = service.joinSession(created.session.code, 'Bob');
+
+    // Bob disconnects, then Host votes — no auto-reveal should fire
+    service.removeParticipant(created.session.id, joined.participant.id);
+    const after = service.submitEstimate(created.session.id, created.participant.id, '8');
+    expect(after.revealed).toBe(false);
   });
 
   // ── pruneExpired ─────────────────────────────────────────────────────────
@@ -233,4 +244,3 @@ describe('sessionService', () => {
     expect(updatedMessages).toHaveLength(0);
   });
 });
-

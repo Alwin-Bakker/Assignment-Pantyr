@@ -5,16 +5,20 @@ export function buildResolvers(sessionService: SessionService, pubsub: PubSub) {
   return {
     Query: {
       getSession: (_: unknown, { id }: { id: string }) => sessionService.getSession(id),
-      getSessionByCode: (_: unknown, { code }: { code: string }) => sessionService.getSessionByCode(code),
+      getSessionByCode: (_: unknown, { code }: { code: string }) =>
+        sessionService.getSessionByCode(code),
     },
     Mutation: {
-      createSession: (_: unknown, { name }: { name: string }) =>
-        sessionService.createSession(name),
+      createSession: (_: unknown, { name }: { name: string }) => sessionService.createSession(name),
       joinSession: (_: unknown, { code, name }: { code: string; name: string }) =>
         sessionService.joinSession(code, name),
       submitEstimate: (
         _: unknown,
-        { sessionId, participantId, value }: { sessionId: string; participantId: string; value: string },
+        {
+          sessionId,
+          participantId,
+          value,
+        }: { sessionId: string; participantId: string; value: string },
       ) => sessionService.submitEstimate(sessionId, participantId, value),
       revealVotes: (
         _: unknown,
@@ -26,12 +30,28 @@ export function buildResolvers(sessionService: SessionService, pubsub: PubSub) {
       ) => sessionService.resetEstimates(sessionId, participantId),
       setStoryTitle: (
         _: unknown,
-        { sessionId, participantId, title }: { sessionId: string; participantId: string; title: string },
+        {
+          sessionId,
+          participantId,
+          title,
+        }: { sessionId: string; participantId: string; title: string },
       ) => sessionService.setStoryTitle(sessionId, participantId, title),
       setStoryContext: (
         _: unknown,
-        { sessionId, participantId, context }: { sessionId: string; participantId: string; context: string },
+        {
+          sessionId,
+          participantId,
+          context,
+        }: { sessionId: string; participantId: string; context: string },
       ) => sessionService.setStoryContext(sessionId, participantId, context),
+      pickStoryPoints: (
+        _: unknown,
+        {
+          sessionId,
+          participantId,
+          points,
+        }: { sessionId: string; participantId: string; points: string },
+      ) => sessionService.pickStoryPoints(sessionId, participantId, points),
       closeSession: (
         _: unknown,
         { sessionId, participantId }: { sessionId: string; participantId: string },
@@ -39,7 +59,10 @@ export function buildResolvers(sessionService: SessionService, pubsub: PubSub) {
       leaveSession: (
         _: unknown,
         { sessionId, participantId }: { sessionId: string; participantId: string },
-      ) => { sessionService.removeParticipant(sessionId, participantId); return true; },
+      ) => {
+        sessionService.removeParticipant(sessionId, participantId);
+        return true;
+      },
       reconnectParticipant: (
         _: unknown,
         { sessionId, participantId }: { sessionId: string; participantId: string },
@@ -59,4 +82,3 @@ export function buildResolvers(sessionService: SessionService, pubsub: PubSub) {
 }
 
 export default buildResolvers;
-

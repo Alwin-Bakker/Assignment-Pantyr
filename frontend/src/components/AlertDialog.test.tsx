@@ -12,7 +12,7 @@ describe('AlertDialog', () => {
         onOpenChange={() => {}}
         title="Are you sure?"
         onConfirm={vi.fn()}
-      />
+      />,
     );
     expect(screen.queryByRole('alertdialog')).not.toBeInTheDocument();
   });
@@ -25,7 +25,7 @@ describe('AlertDialog', () => {
         title="Reveal estimates?"
         description="Not everyone has voted yet."
         onConfirm={vi.fn()}
-      />
+      />,
     );
     expect(screen.getByRole('alertdialog')).toBeInTheDocument();
     expect(screen.getByText('Reveal estimates?')).toBeInTheDocument();
@@ -42,7 +42,7 @@ describe('AlertDialog', () => {
         title="Close session?"
         confirmLabel="Close"
         onConfirm={onConfirm}
-      />
+      />,
     );
     await user.click(screen.getByRole('button', { name: /close/i }));
     expect(onConfirm).toHaveBeenCalledOnce();
@@ -52,12 +52,7 @@ describe('AlertDialog', () => {
     const user = userEvent.setup();
     const onOpenChange = vi.fn();
     render(
-      <AlertDialog
-        open={true}
-        onOpenChange={onOpenChange}
-        title="Delete?"
-        onConfirm={vi.fn()}
-      />
+      <AlertDialog open={true} onOpenChange={onOpenChange} title="Delete?" onConfirm={vi.fn()} />,
     );
     await user.click(screen.getByRole('button', { name: /cancel/i }));
     expect(onOpenChange).toHaveBeenCalledWith(false);
@@ -67,12 +62,7 @@ describe('AlertDialog', () => {
     const user = userEvent.setup();
     const onOpenChange = vi.fn();
     render(
-      <AlertDialog
-        open={true}
-        onOpenChange={onOpenChange}
-        title="Delete?"
-        onConfirm={vi.fn()}
-      />
+      <AlertDialog open={true} onOpenChange={onOpenChange} title="Delete?" onConfirm={vi.fn()} />,
     );
     await user.keyboard('{Escape}');
     expect(onOpenChange).toHaveBeenCalledWith(false);

@@ -12,6 +12,7 @@ export type SessionData = {
   revealed: boolean;
   participants: { id: string; name: string; connected: boolean }[];
   estimates: { participantId: string; value: string | null; hasVoted: boolean }[];
+  completedStories: { title: string; points: string }[];
 };
 
 type UseSessionDataResult = {
@@ -47,7 +48,11 @@ export function useSessionData(sessionId: string): UseSessionDataResult {
 
       const nowAllNotVoted =
         updated.estimates.length > 0 && updated.estimates.every((e) => !e.hasVoted);
-      if (nowAllNotVoted && prevHasVotesRef.current) {
+      // Suppress the reset toast when pickStoryPoints fired — that clears
+      // the title and resets at the same time, so the AdminPanel already
+      // shows a "Saved" toast and the reset toast would overlap.
+      const storyWasPicked = !!prevStoryTitleRef.current && !updated.storyTitle;
+      if (nowAllNotVoted && prevHasVotesRef.current && !storyWasPicked) {
         toast('Round has been reset');
       }
 

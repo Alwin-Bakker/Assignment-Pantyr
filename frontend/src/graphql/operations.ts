@@ -3,8 +3,15 @@ import { gql } from '@apollo/client';
 export const CREATE_SESSION = gql`
   mutation CreateSession($name: String!) {
     createSession(name: $name) {
-      session { id code }
-      participant { id name isHost }
+      session {
+        id
+        code
+      }
+      participant {
+        id
+        name
+        isHost
+      }
     }
   }
 `;
@@ -12,8 +19,15 @@ export const CREATE_SESSION = gql`
 export const JOIN_SESSION = gql`
   mutation JoinSession($code: String!, $name: String!) {
     joinSession(code: $code, name: $name) {
-      session { id code }
-      participant { id name isHost }
+      session {
+        id
+        code
+      }
+      participant {
+        id
+        name
+        isHost
+      }
     }
   }
 `;
@@ -22,7 +36,11 @@ export const SUBMIT_ESTIMATE = gql`
   mutation SubmitEstimate($sessionId: ID!, $participantId: ID!, $value: String!) {
     submitEstimate(sessionId: $sessionId, participantId: $participantId, value: $value) {
       id
-      estimates { participantId value hasVoted }
+      estimates {
+        participantId
+        value
+        hasVoted
+      }
       revealed
     }
   }
@@ -33,7 +51,11 @@ export const RESET_ESTIMATES = gql`
     resetEstimates(sessionId: $sessionId, participantId: $participantId) {
       id
       revealed
-      estimates { participantId value hasVoted }
+      estimates {
+        participantId
+        value
+        hasVoted
+      }
     }
   }
 `;
@@ -43,7 +65,11 @@ export const REVEAL_VOTES = gql`
     revealVotes(sessionId: $sessionId, participantId: $participantId) {
       id
       revealed
-      estimates { participantId value hasVoted }
+      estimates {
+        participantId
+        value
+        hasVoted
+      }
     }
   }
 `;
@@ -69,9 +95,21 @@ export const GET_SESSION = gql`
       code
       storyTitle
       storyContext
-      participants { id name connected }
-      estimates { participantId value hasVoted }
+      participants {
+        id
+        name
+        connected
+      }
+      estimates {
+        participantId
+        value
+        hasVoted
+      }
       revealed
+      completedStories {
+        title
+        points
+      }
     }
   }
 `;
@@ -107,8 +145,15 @@ export const GET_SESSION_BY_CODE = gql`
       code
       storyTitle
       storyContext
-      participants { id name }
-      estimates { participantId value hasVoted }
+      participants {
+        id
+        name
+      }
+      estimates {
+        participantId
+        value
+        hasVoted
+      }
       revealed
     }
   }
@@ -119,11 +164,43 @@ export const ON_SESSION_UPDATED = gql`
     sessionUpdated(sessionId: $sessionId) {
       id
       code
-      participants { id name connected }
-      estimates { participantId value hasVoted }
+      participants {
+        id
+        name
+        connected
+      }
+      estimates {
+        participantId
+        value
+        hasVoted
+      }
       revealed
       storyTitle
       storyContext
+      completedStories {
+        title
+        points
+      }
+    }
+  }
+`;
+
+export const PICK_STORY_POINTS = gql`
+  mutation PickStoryPoints($sessionId: ID!, $participantId: ID!, $points: String!) {
+    pickStoryPoints(sessionId: $sessionId, participantId: $participantId, points: $points) {
+      id
+      revealed
+      storyTitle
+      storyContext
+      estimates {
+        participantId
+        value
+        hasVoted
+      }
+      completedStories {
+        title
+        points
+      }
     }
   }
 `;
@@ -133,4 +210,3 @@ export const ON_SESSION_CLOSED = gql`
     sessionClosed(sessionId: $sessionId)
   }
 `;
-

@@ -23,6 +23,7 @@ const typeDefs = gql`
     resetEstimates(sessionId: ID!, participantId: ID!): Session!
     setStoryTitle(sessionId: ID!, participantId: ID!, title: String!): Session!
     setStoryContext(sessionId: ID!, participantId: ID!, context: String!): Session!
+    pickStoryPoints(sessionId: ID!, participantId: ID!, points: String!): Session!
     closeSession(sessionId: ID!, participantId: ID!): Boolean!
     leaveSession(sessionId: ID!, participantId: ID!): Boolean!
     reconnectParticipant(sessionId: ID!, participantId: ID!): Session!
@@ -48,6 +49,11 @@ const typeDefs = gql`
     hasVoted: Boolean!
   }
 
+  type CompletedStory {
+    title: String!
+    points: String!
+  }
+
   type Session {
     id: ID!
     code: String!
@@ -58,6 +64,7 @@ const typeDefs = gql`
     revealed: Boolean!
     storyTitle: String
     storyContext: String
+    completedStories: [CompletedStory!]!
   }
 
   type JoinSessionResult {
@@ -80,7 +87,11 @@ async function start() {
     ...resolvers,
     Query: {
       ...(resolvers.Query || {}),
-      health: () => ({ status: 'ok', uptime: process.uptime(), timestamp: new Date().toISOString() }),
+      health: () => ({
+        status: 'ok',
+        uptime: process.uptime(),
+        timestamp: new Date().toISOString(),
+      }),
     },
   };
 

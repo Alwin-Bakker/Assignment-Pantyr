@@ -13,6 +13,11 @@ export type Estimate = {
   storedValue?: string | null; // internal storage before reveal
 };
 
+export type CompletedStory = {
+  title: string;
+  points: string;
+};
+
 export type Session = {
   id: string;
   code: string;
@@ -24,6 +29,7 @@ export type Session = {
   revealed: boolean;
   storyTitle?: string | null;
   storyContext?: string | null;
+  completedStories: CompletedStory[];
 };
 
 export type JoinSessionResult = {
@@ -42,6 +48,7 @@ export type SessionService = {
   closeSession(sessionId: string, participantId: string): boolean;
   removeParticipant(sessionId: string, participantId: string): void;
   reconnectParticipant(sessionId: string, participantId: string): Session;
+  pickStoryPoints(sessionId: string, participantId: string, points: string): Session;
   getSession(sessionId: string): Session;
   getSessionByCode(code: string): Session;
   pruneExpired(): void;

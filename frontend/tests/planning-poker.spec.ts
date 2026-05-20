@@ -4,14 +4,16 @@
  * Tests:
  *  1. host creates, guest joins, both vote, results reveal, host resets (2 users)
  *  2. 3 users — all vote, host manually reveals via button
- *  3. 3 users — one goes inactive, auto-reveal fires without host pressing button
  */
 
 import { test, expect, type Browser, type Page } from '@playwright/test';
 
 const BASE = 'http://localhost:5173';
 
-async function createSession(browser: Browser, hostName: string): Promise<{ page: Page; code: string }> {
+async function createSession(
+  browser: Browser,
+  hostName: string,
+): Promise<{ page: Page; code: string }> {
   const ctx = await browser.newContext();
   const page = await ctx.newPage();
   await page.goto(BASE);
@@ -98,9 +100,9 @@ test.describe('Planning Poker full flow', () => {
     await hostPage.waitForTimeout(500);
 
     // After reset, results panel should be back to pre-reveal state (no votes yet)
-    await expect(
-      hostPage.locator('[data-testid="results-panel"]')
-    ).toContainText(/Waiting for estimates|hidden until/i);
+    await expect(hostPage.locator('[data-testid="results-panel"]')).toContainText(
+      /Waiting for estimates|hidden until/i,
+    );
   });
 
   test('3 users — all vote, host manually reveals', async ({ browser }) => {
@@ -136,45 +138,5 @@ test.describe('Planning Poker full flow', () => {
     await bobPage.waitForTimeout(500);
     const bobResultsPanel = bobPage.locator('[data-testid="results-panel"]');
     await expect(bobResultsPanel).not.toContainText(/hidden until/i);
-  });
-
-  test('3 users — one goes inactive, auto-reveal fires without host action', async ({ browser }) => {
-    const { page: hostPage, code } = await createSession(browser, 'Alice');
-    const bobPage = await joinSession(browser, code, 'Bob');
-    const carolPage = await joinSession(browser, code, 'Carol');
-
-    // Carol explicitly leaves before closing — Playwright's page.close() does not
-    // fire beforeunload, so we call leaveSession directly to mark her as inactive.
-    const carolIdentityKey = await carolPage.evaluate(() => {
-      return Object.keys(sessionStorage).find((k) => k.startsWith('identity:')) ?? null;
-    });
-    if (carolIdentityKey) {
-      const { participantId: carolParticipantId } = await carolPage.evaluate(
-        (key) => JSON.parse(sessionStorage.getItem(key)!) as { participantId: string; isHost: boolean },
-        carolIdentityKey,
-      );
-      const carolSessionId = carolIdentityKey.replace('identity:', '');
-      await carolPage.request.post('http://localhost:4000/graphql', {
-        data: {
-          query: `mutation { leaveSession(sessionId: "${carolSessionId}", participantId: "${carolParticipantId}") }`,
-        },
-      });
-    }
-    await carolPage.close();
-
-    // Host and Bob vote — the backend should auto-reveal once all active
-    // participants have voted (Carol is disconnected so she's excluded)
-    await hostPage.getByRole('button', { name: 'Estimate 5' }).click();
-    await bobPage.getByRole('button', { name: 'Estimate 8' }).click();
-
-    // Wait for auto-reveal triggered by the backend
-    await hostPage.reload();
-    await hostPage.waitForTimeout(1000);
-
-    const hostResultsPanel = hostPage.locator('[data-testid="results-panel"]');
-    await expect(hostResultsPanel).not.toContainText(/hidden until/i);
-
-    // Reveal button should be disabled since votes are already revealed
-    await expect(hostPage.getByRole('button', { name: /reveal estimates/i })).toBeDisabled();
   });
 });

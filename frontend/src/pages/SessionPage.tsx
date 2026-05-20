@@ -25,17 +25,28 @@ export default function SessionPage() {
   // unload (including reloads), so we cancel that out here on mount.
   useEffect(() => {
     if (!sessionId || !participantId) return;
-    reconnectParticipantMutation({ variables: { sessionId, participantId } }).catch(() => {
-      // Session may have been closed while offline — ignore.
-    });
+    reconnectParticipantMutation({ variables: { sessionId, participantId } }).catch(() => {});
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  // Reactively re-assert connected whenever the subscription tells us we became
+  // disconnected. This handles the keepalive race on page refresh: the keepalive
+  // leaveSession from the previous page can arrive *after* the reconnect on mount,
+  // but the resulting subscription broadcast flips myConnected to false here, and
+  // we immediately fire another reconnect that is always the last word.
+  const myConnected = session?.participants.find((p) => p.id === participantId)?.connected;
+  useEffect(() => {
+    if (myConnected !== false || !sessionId || !participantId) return;
+    reconnectParticipantMutation({ variables: { sessionId, participantId } }).catch(() => {});
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [myConnected]);
 
   // Local state gives instant card-highlight feedback before the server round-trip.
   // Cleared when the backend confirms the round was reset (hasVoted → false).
   const [localSelected, setLocalSelected] = useState<string | null>(null);
 
-  const myHasVoted = session?.estimates.find((e) => e.participantId === participantId)?.hasVoted ?? false;
+  const myHasVoted =
+    session?.estimates.find((e) => e.participantId === participantId)?.hasVoted ?? false;
   useEffect(() => {
     if (!myHasVoted) setLocalSelected(null);
   }, [myHasVoted]);
@@ -85,7 +96,7 @@ export default function SessionPage() {
   return (
     <main className="min-h-screen p-8 font-sans">
       <div className="max-w-7xl mx-auto space-y-6">
-        {/* Top row: story content (left) + participants / invite (right) */}
+        {/* Top row: story content and pokering (left) / participants + invite (right) */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           {/* ── Left: story-related content ─────────────────────────── */}
           <div className="md:col-span-2 flex flex-col">
@@ -102,7 +113,8 @@ export default function SessionPage() {
               {/* Current story */}
               <div className="mb-4 rounded-lg border border-p-green bg-p-light p-4">
                 <h3 className="text-lg font-semibold text-p-dark">
-                  Current story{session.storyTitle ? (
+                  Current story
+                  {session.storyTitle ? (
                     <span className="font-normal text-p-dark">: {session.storyTitle}</span>
                   ) : (
                     <span className="text-sm font-normal text-p-grey"> — no story set yet</span>
@@ -116,7 +128,9 @@ export default function SessionPage() {
                 )}
                 <div className="mt-4 text-sm text-p-grey">
                   {votesCount > 0 ? (
-                    <span>{votesCount} of {totalParticipants} participants voted</span>
+                    <span>
+                      {votesCount} of {totalParticipants} participants voted
+                    </span>
                   ) : (
                     <span>Waiting for estimates</span>
                   )}
@@ -149,9 +163,11 @@ export default function SessionPage() {
             </div>
           </div>
 
-          {/* ── Right: participants + invite ─────────────────────────── */}
-          <aside className="flex flex-col">
-            <div className="bg-white p-6 rounded-md border border-p-green shadow-sm flex-1">
+          {/* ── Right: participants + invite + estimated stories ─────── */}
+          <aside className="flex flex-col gap-6">
+            <div
+              className={`bg-white p-6 rounded-md border border-p-green shadow-sm${session.completedStories.length === 0 ? ' flex-1' : ''}`}
+            >
               <h3 className="text-lg font-semibold text-p-dark mb-4">Participants</h3>
               <ParticipantList
                 participants={session.participants}
@@ -162,6 +178,24 @@ export default function SessionPage() {
                 <InvitePanel code={session.code} sessionId={sessionId} />
               </div>
             </div>
+
+            {session.completedStories.length > 0 && (
+              <div className="flex-1 flex flex-col bg-white p-6 rounded-md border border-p-green shadow-sm overflow-hidden">
+                <h3 className="text-lg font-semibold text-p-dark mb-4 flex-shrink-0">
+                  Estimated stories
+                </h3>
+                <ul className="divide-y divide-p-green overflow-y-auto">
+                  {session.completedStories.map((story, i) => (
+                    <li key={i} className="flex items-center justify-between py-2">
+                      <span className="text-sm text-p-dark">{story.title}</span>
+                      <span className="ml-4 flex-shrink-0 rounded-full border border-p-blue bg-p-blue/10 px-3 py-0.5 text-sm font-semibold text-p-blue">
+                        {story.points}
+                      </span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
           </aside>
         </div>
 

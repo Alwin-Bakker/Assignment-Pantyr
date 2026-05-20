@@ -16,7 +16,7 @@ const splitLink = split(
     return def.kind === 'OperationDefinition' && def.operation === 'subscription';
   },
   wsLink,
-  httpLink
+  httpLink,
 );
 
 export const client = new ApolloClient({

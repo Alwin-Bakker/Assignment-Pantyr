@@ -1,0 +1,10 @@
+# Tell GitHub Linguist to ignore generated and vendored files
+# so the repository language stats reflect only hand-written source code.
+
+frontend/storybook-static/**  linguist-generated=true
+**/storybook-static/**        linguist-generated=true
+**/test-results/**            linguist-generated=true
+**/playwright-report/**       linguist-generated=true
+**/dist/**                    linguist-generated=true
+**/build/**                   linguist-generated=true
+**/coverage/**                linguist-generated=true

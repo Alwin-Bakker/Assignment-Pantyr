@@ -60,7 +60,7 @@ Participant identity (`participantId`, `isHost`) is written to `sessionStorage` 
 `makeCode` regenerates until it finds a code not already in `sessionsByCode`, preventing silent overwrites. With a 6-character alphanumeric space of ~900 million combinations the loop practically never iterates more than once.
 
 **Known limitation — `participantId` is unauthenticated**
-There is no session token bound to a browser. Any client that knows a `sessionId` and `participantId` can submit mutations on behalf of that participant. A production fix would issue a short-lived signed token at join time and verify it on every mutation. This was deemed out of scope for the assignment.
+There is no session token bound to a browser. Any client that knows a `sessionId` and `participantId` can submit mutations on behalf of that participant. The concrete production fix: issue a short-lived signed JWT (e.g. HS256, 1 or 2 hour expiry) at join time, return it alongside `participantId` in the `joinSession` / `createSession` response, store it in `sessionStorage`, and send it as an `Authorization: Bearer <token>` header on every mutation. The service layer verifies the signature and rejects requests where the token's `sub` does not match the `participantId` argument. This was deemed out of scope for the assignment, but the approach maps directly onto the existing architecture.
 
 ## Running locally
 
@@ -92,9 +92,12 @@ npm install
 ```bash
 # frontend
 cp frontend/.env.example frontend/.env
+
+# backend (optional — only needed to change the default port)
+cp backend/.env.example backend/.env
 ```
 
-The defaults point to `localhost:4000` and work out of the box for local development. No backend `.env` is required unless you want to change the port.
+The defaults point to `localhost:4000` and work out of the box for local development.
 
 ### Step 3 — Start the backend
 
